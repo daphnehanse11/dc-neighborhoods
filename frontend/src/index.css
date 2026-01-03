@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@source "../";
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* MapLibre overrides */
+.maplibregl-map {
+  font-family: inherit;
+}
+
+.maplibregl-ctrl-group button {
+  width: 44px;
+  height: 44px;
+}
+
+/* Larger touch targets for mobile */
+@media (max-width: 768px) {
+  .maplibregl-ctrl-group button {
+    width: 52px;
+    height: 52px;
+  }
+}
