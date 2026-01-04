@@ -19,7 +19,7 @@ def normalize_name(name: str) -> str:
     return name.lower().strip()
 
 
-@router.post("", response_model=SubmissionResponse)
+@router.post("", response_model=SubmissionResponse, response_model_by_alias=True)
 async def create_submission(
     submission: SubmissionCreate,
     request: Request,
@@ -63,7 +63,7 @@ async def create_submission(
     )
 
 
-@router.get("", response_model=List[SubmissionResponse])
+@router.get("", response_model=List[SubmissionResponse], response_model_by_alias=True)
 async def get_submissions(
     neighborhood: str | None = None,
     db: Session = Depends(get_db)

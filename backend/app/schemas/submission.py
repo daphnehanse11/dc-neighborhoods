@@ -1,6 +1,11 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import List
 from datetime import datetime
+
+
+def to_camel(string: str) -> str:
+    parts = string.split('_')
+    return parts[0] + ''.join(word.capitalize() for word in parts[1:])
 
 
 class Coordinates(BaseModel):
@@ -45,6 +50,8 @@ class PolygonGeometry(BaseModel):
 
 
 class SubmissionCreate(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     address_text: str
     address_point: List[float]
     neighborhood_name: str
@@ -69,6 +76,12 @@ class SubmissionCreate(BaseModel):
 
 
 class SubmissionResponse(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+    )
+
     id: int
     session_id: str | None
     address_text: str
@@ -76,6 +89,3 @@ class SubmissionResponse(BaseModel):
     neighborhood_name: str
     boundary: PolygonGeometry
     submitted_at: datetime
-
-    class Config:
-        from_attributes = True
