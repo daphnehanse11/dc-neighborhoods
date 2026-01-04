@@ -79,16 +79,28 @@ export default function Map({ mode, onPolygonChange, address, isDrawing, drawTri
         .then(res => res.json())
         .then((stations: MetroStation[]) => {
           stations.forEach(station => {
-            // Use the first line's color for the marker
-            const primaryLine = station.lines[0]
-            const color = LINE_COLORS[primaryLine] || '#666'
+            // Create gradient for multi-line stations
+            const colors = station.lines.map(line => LINE_COLORS[line] || '#666')
+            let background: string
+
+            if (colors.length === 1) {
+              background = colors[0]
+            } else {
+              // Create conic gradient with equal segments
+              const segments = colors.map((color, i) => {
+                const start = (i / colors.length) * 360
+                const end = ((i + 1) / colors.length) * 360
+                return `${color} ${start}deg ${end}deg`
+              }).join(', ')
+              background = `conic-gradient(${segments})`
+            }
 
             // Create a custom element for the metro marker
             const el = document.createElement('div')
             el.className = 'metro-marker'
-            el.style.width = '12px'
-            el.style.height = '12px'
-            el.style.backgroundColor = color
+            el.style.width = '14px'
+            el.style.height = '14px'
+            el.style.background = background
             el.style.border = '2px solid white'
             el.style.borderRadius = '50%'
             el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)'
