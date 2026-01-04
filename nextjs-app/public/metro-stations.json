@@ -45,7 +45,7 @@
   {"name": "Bethesda", "lines": ["red"], "coords": [-77.0941, 38.9845]},
   {"name": "Medical Center", "lines": ["red"], "coords": [-77.0970, 38.9995]},
   {"name": "Grosvenor-Strathmore", "lines": ["red"], "coords": [-77.1040, 39.0293]},
-  {"name": "White Flint", "lines": ["red"], "coords": [-77.1131, 39.0481]},
+  {"name": "North Bethesda", "lines": ["red"], "coords": [-77.1131, 39.0481]},
   {"name": "Twinbrook", "lines": ["red"], "coords": [-77.1211, 39.0623]},
   {"name": "Rockville", "lines": ["red"], "coords": [-77.1464, 39.0843]},
   {"name": "Shady Grove", "lines": ["red"], "coords": [-77.1648, 39.1198]},
