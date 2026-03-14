@@ -1,0 +1,46 @@
+city_country,year,event,direction,source
+London,1580,Elizabeth I bans new building in 3-mile belt,restrict,Historical
+London,1935,Green Belt formally proposed,restrict,GLRPC
+London,1938,Green Belt Act,restrict,Parliament
+London,1944,Abercrombie Plan: 4 density rings,restrict,GLC
+London,1947,Town and Country Planning Act,neutral,Parliament
+UK,1955,Ministry circular: Green Belt around all cities,restrict,MHCLG
+London,2004,London Plan Density Matrix introduced,neutral,GLA
+London,2021,New London Plan: design-led (removes matrix),permit,GLA
+UK,2024,Labour Grey Belt reforms in NPPF,permit,DLUHC
+Paris,1667,First building height ordinance,restrict,City of Paris
+Paris,1783,Height tied to street width (hygiene),restrict,Royal declaration
+Paris,1853,Haussmann uniform facades 17.55-20m,neutral,Prefect of Seine
+Paris,1977,"Height limit reinstated (31m center, 37m periphery)",restrict,PLU
+Paris,2010,"Height limits relaxed (50m residential, 180m commercial)",permit,Delanoë
+Paris,2023,Bioclimatic PLU reinstates 1977-era limits,restrict,Hidalgo
+Germany,1962,BauNVO: original density controls (GRZ/GFZ),neutral,Federal
+Germany,1968,BauNVO: upper density limits raised,permit,Federal
+Germany,1977,BauNVO: special residential area; urban renewal,neutral,Federal
+Germany,1990,BauNVO: major inner development revision,permit,Federal
+Germany,2017,"BauNVO: Urbanes Gebiet (GRZ 0.8, GFZ 3.0)",permit,Federal
+Berlin,1990,Parking minimums abolished,permit,City
+Copenhagen,1947,Finger Plan: 5 corridors + green wedges,restrict,National
+Copenhagen,1949,New construction in land zones forbidden,restrict,Planning law
+Copenhagen,2007,Finger Plan issued as binding national directive,neutral,National
+Barcelona,1859,Cerdà Plan: 50% block coverage intended,neutral,Royal approval
+Barcelona,1872,Systematic bylaw violations begin (4.4x density),permit,De facto
+Barcelona,1953,Plan Comarcal: first general plan since Cerdà,neutral,National
+Barcelona,1976,"PGM-76: downzoned metro area, reclaimed park land",restrict,Metropolitan
+Stockholm,1874,National code raises max from 4 to 5 stories,permit,National
+Stockholm,1952,Markelius General Plan: ABC suburbs on rail,neutral,City
+Stockholm,1999,CityPlan 99: Build the City Inwards,permit,City
+Vienna,1893,First Bauzonenplan: height/density rules,neutral,City
+Vienna,1920,"Red Vienna: social housing, no SF-exclusive zoning",permit,City
+Vienna,2018,Subsidised Housing zoning category added,permit,Building Code
+Netherlands,1901,Housing Act (Woningwet): minimum quality standards,neutral,National
+Netherlands,1989,Eastern Docklands: Compact City policy,permit,Amsterdam
+Switzerland,1980,Spatial Planning Act (RPG),neutral,National
+Switzerland,2014,RPG revision: must un-zone excess building zones,restrict,National
+New York,1916,First comprehensive zoning ordinance,restrict,City
+US,1926,Euclid v. Ambler: zoning is constitutional,neutral,Supreme Court
+US,1950,FHA/VA mortgage standards embed SF zoning,restrict,Federal
+Minneapolis,2018,Minneapolis 2040: eliminates SF-exclusive zoning,permit,City
+Oregon,2019,HB 2001: bans SF-exclusive zoning statewide,permit,State
+Japan,1968,City Planning Act: 12 national use zones,neutral,National
+Japan,2002,Urban Renaissance: relaxed FAR in special zones,permit,National

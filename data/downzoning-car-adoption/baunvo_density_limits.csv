@@ -1,0 +1,30 @@
+version_year,zone_code,zone_description,max_grz,max_gfz
+1962,WS,Kleinsiedlungsgebiet (smallholder settlement),0.2,0.4
+1962,WR,Reines Wohngebiet (pure residential),0.4,1.2
+1962,WA,Allgemeines Wohngebiet (general residential),0.4,1.2
+1962,MI,Mischgebiet (mixed-use),0.6,1.2
+1962,MK,Kerngebiet (core/commercial),1.0,3.0
+1962,GE,Gewerbegebiet (commercial/light industrial),0.8,2.4
+1962,GI,Industriegebiet (industrial),0.8,2.4
+1968,WS,Kleinsiedlungsgebiet,0.2,0.4
+1968,WR,Reines Wohngebiet,0.4,1.2
+1968,WA,Allgemeines Wohngebiet,0.4,1.2
+1968,MI,Mischgebiet,0.6,1.6
+1968,MK,Kerngebiet,1.0,3.0
+1968,GE,Gewerbegebiet,0.8,2.4
+1968,GI,Industriegebiet,0.8,2.4
+1990,WS,Kleinsiedlungsgebiet,0.2,0.4
+1990,WR,Reines Wohngebiet,0.4,1.2
+1990,WA,Allgemeines Wohngebiet,0.4,1.2
+1990,MI,Mischgebiet,0.6,1.2
+1990,MK,Kerngebiet,1.0,3.0
+1990,GE,Gewerbegebiet,0.8,2.4
+1990,GI,Industriegebiet,0.8,2.4
+2017,WS,Kleinsiedlungsgebiet,0.2,0.4
+2017,WR,Reines Wohngebiet,0.4,1.2
+2017,WA,Allgemeines Wohngebiet,0.4,1.2
+2017,MU,Urbanes Gebiet (NEW),0.8,3.0
+2017,MI,Mischgebiet,0.6,1.2
+2017,MK,Kerngebiet,1.0,3.0
+2017,GE,Gewerbegebiet,0.8,2.4
+2017,GI,Industriegebiet,0.8,2.4
