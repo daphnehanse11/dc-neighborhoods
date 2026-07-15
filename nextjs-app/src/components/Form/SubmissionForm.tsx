@@ -131,7 +131,7 @@ export default function SubmissionForm({
                 className="mt-3 mx-auto max-h-64 rounded-lg border border-gray-200"
               />
               <p className="text-xs text-gray-500 mt-2">
-                Your exact address is not shown — just your boundary.
+                The image shows only your boundary, not your address.
               </p>
               <div className="mt-3 flex flex-col gap-2">
                 {canShare && (

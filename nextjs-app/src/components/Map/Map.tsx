@@ -35,6 +35,7 @@ interface MetroStation {
 // Custom draw styles: mapbox-gl-draw's default theme uses a line-dasharray
 // expression MapLibre v5 rejects, which breaks the control's setup entirely.
 const DRAW_COLOR = '#2563eb'
+const FIRST_VERTEX_COLOR = '#16a34a'
 const DRAW_STYLES = [
   {
     id: 'gl-draw-polygon-fill',
@@ -59,14 +60,27 @@ const DRAW_STYLES = [
   {
     id: 'gl-draw-vertex-halo',
     type: 'circle',
-    filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+    filter: ['all', ['==', 'meta', 'vertex'], ['!=', 'coord_path', '0.0'], ['==', '$type', 'Point']],
     paint: { 'circle-radius': 9, 'circle-color': '#ffffff' },
   },
   {
     id: 'gl-draw-vertex',
     type: 'circle',
-    filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+    filter: ['all', ['==', 'meta', 'vertex'], ['!=', 'coord_path', '0.0'], ['==', '$type', 'Point']],
     paint: { 'circle-radius': 6, 'circle-color': DRAW_COLOR },
+  },
+  // The first vertex is the one you tap to close the shape, so make it stand out
+  {
+    id: 'gl-draw-vertex-first-halo',
+    type: 'circle',
+    filter: ['all', ['==', 'meta', 'vertex'], ['==', 'coord_path', '0.0'], ['==', '$type', 'Point']],
+    paint: { 'circle-radius': 10, 'circle-color': '#ffffff' },
+  },
+  {
+    id: 'gl-draw-vertex-first',
+    type: 'circle',
+    filter: ['all', ['==', 'meta', 'vertex'], ['==', 'coord_path', '0.0'], ['==', '$type', 'Point']],
+    paint: { 'circle-radius': 7, 'circle-color': FIRST_VERTEX_COLOR },
   },
   {
     id: 'gl-draw-midpoint',
@@ -245,8 +259,8 @@ export default function Map({ mode, polygon, onPolygonChange, address, isDrawing
   }, [isDrawing, polygon, mapReady])
 
   // Generate a shareable image: basemap framed to the boundary (no address
-  // marker — HTML markers are not part of the GL canvas), the polygon drawn
-  // in a clean style, and a caption band.
+  // marker, since HTML markers are not part of the GL canvas), the polygon
+  // drawn in a clean style, and a caption band.
   const captureShareImage = useCallback<CaptureShareImage>(async (boundary, neighborhoodName) => {
     const map = mapRef.current
     if (!map) throw new Error('Map not ready')
@@ -365,7 +379,7 @@ export default function Map({ mode, polygon, onPolygonChange, address, isDrawing
       {/* Drawing instructions overlay */}
       {isDrawing && showInstructions && (
         <div className="absolute top-20 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-96 bg-blue-600 text-white p-3 rounded-lg shadow-lg text-center text-sm z-20">
-          <p>Tap on the map to add points. Tap first point to close shape.</p>
+          <p>Tap on the map to add points. Tap the green starting point to close the shape.</p>
           <button
             onClick={() => setShowInstructions(false)}
             className="mt-3 w-full py-2 px-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 active:bg-blue-100"
