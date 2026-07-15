@@ -244,6 +244,11 @@ export default function SubmissionForm({
             Once enough people have drawn their neighborhoods, we will publish
             a map of where they agree and where they don&apos;t.
           </p>
+
+          <p className="text-xs text-gray-500 text-center">
+            Your address stays private. It anchors your submission and never
+            appears on the public map.
+          </p>
         </form>
       )}
     </div>

@@ -19,3 +19,6 @@ node_modules/
 
 # OS
 .DS_Store
+
+# Database backups contain addresses, never commit
+data/backups/
