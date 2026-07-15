@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import type { CaptureShareImage } from '@/lib/types'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
@@ -31,6 +32,50 @@ interface MetroStation {
   coords: [number, number]
 }
 
+// Custom draw styles: mapbox-gl-draw's default theme uses a line-dasharray
+// expression MapLibre v5 rejects, which breaks the control's setup entirely.
+const DRAW_COLOR = '#2563eb'
+const DRAW_STYLES = [
+  {
+    id: 'gl-draw-polygon-fill',
+    type: 'fill',
+    filter: ['all', ['==', '$type', 'Polygon']],
+    paint: { 'fill-color': DRAW_COLOR, 'fill-opacity': 0.12 },
+  },
+  {
+    id: 'gl-draw-polygon-stroke',
+    type: 'line',
+    filter: ['all', ['==', '$type', 'Polygon']],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': DRAW_COLOR, 'line-width': 2.5 },
+  },
+  {
+    id: 'gl-draw-line',
+    type: 'line',
+    filter: ['all', ['==', '$type', 'LineString']],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': DRAW_COLOR, 'line-width': 2.5, 'line-dasharray': [2, 2] },
+  },
+  {
+    id: 'gl-draw-vertex-halo',
+    type: 'circle',
+    filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+    paint: { 'circle-radius': 9, 'circle-color': '#ffffff' },
+  },
+  {
+    id: 'gl-draw-vertex',
+    type: 'circle',
+    filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+    paint: { 'circle-radius': 6, 'circle-color': DRAW_COLOR },
+  },
+  {
+    id: 'gl-draw-midpoint',
+    type: 'circle',
+    filter: ['all', ['==', 'meta', 'midpoint'], ['==', '$type', 'Point']],
+    paint: { 'circle-radius': 4, 'circle-color': DRAW_COLOR, 'circle-opacity': 0.7 },
+  },
+]
+
 interface MapProps {
   mode: 'draw' | 'results'
   polygon: GeoJSON.Polygon | null
@@ -39,15 +84,17 @@ interface MapProps {
   isDrawing: boolean
   drawTrigger: number
   onClearDrawing: () => void
+  onRegisterCapture?: (fn: CaptureShareImage) => void
 }
 
-export default function Map({ mode, onPolygonChange, address, isDrawing, drawTrigger, onClearDrawing }: MapProps) {
+export default function Map({ mode, polygon, onPolygonChange, address, isDrawing, drawTrigger, onClearDrawing, onRegisterCapture }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const drawRef = useRef<MapboxDraw | null>(null)
   const markerRef = useRef<maplibregl.Marker | null>(null)
   const metroMarkersRef = useRef<maplibregl.Marker[]>([])
   const [mapReady, setMapReady] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(true)
 
   // Initialize map
   useEffect(() => {
@@ -61,6 +108,8 @@ export default function Map({ mode, onPolygonChange, address, isDrawing, drawTri
       maxBounds: DC_BOUNDS,
       minZoom: 9,
       maxZoom: 18,
+      // Needed so the canvas can be read back when generating the share image
+      canvasContextAttributes: { preserveDrawingBuffer: true },
     })
 
     map.on('load', () => {
@@ -127,6 +176,7 @@ export default function Map({ mode, onPolygonChange, address, isDrawing, drawTri
         touchBuffer: 25,
         clickBuffer: 5,
         boxSelect: false,
+        styles: DRAW_STYLES,
       })
 
       map.addControl(draw as unknown as maplibregl.IControl)
@@ -181,6 +231,106 @@ export default function Map({ mode, onPolygonChange, address, isDrawing, drawTri
     }
   }, [drawTrigger, mapReady])
 
+  // Re-show instructions each time drawing starts
+  useEffect(() => {
+    if (isDrawing) setShowInstructions(true)
+  }, [isDrawing])
+
+  // Exit draw mode when drawing is cancelled or the polygon is cleared
+  useEffect(() => {
+    if (!isDrawing && !polygon && drawRef.current && mapReady) {
+      drawRef.current.deleteAll()
+      drawRef.current.changeMode('simple_select')
+    }
+  }, [isDrawing, polygon, mapReady])
+
+  // Generate a shareable image: basemap framed to the boundary (no address
+  // marker — HTML markers are not part of the GL canvas), the polygon drawn
+  // in a clean style, and a caption band.
+  const captureShareImage = useCallback<CaptureShareImage>(async (boundary, neighborhoodName) => {
+    const map = mapRef.current
+    if (!map) throw new Error('Map not ready')
+
+    // Remove the draw control's rendering of the polygon; we draw our own below
+    drawRef.current?.deleteAll()
+
+    const ring = boundary.coordinates[0] as [number, number][]
+    const bounds = ring.reduce(
+      (b, c) => b.extend(c),
+      new maplibregl.LngLatBounds(ring[0], ring[0])
+    )
+    map.fitBounds(bounds, { padding: 60, duration: 0 })
+    // Wait for tiles at the new view, but don't hang if 'idle' never fires
+    // (e.g. the tab is backgrounded and rendering is paused)
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 2500)
+      map.once('idle', () => {
+        clearTimeout(timer)
+        resolve()
+      })
+    })
+
+    const mapCanvas = map.getCanvas()
+    const W = 1080
+    const mapH = Math.round((W * mapCanvas.height) / mapCanvas.width)
+    const BAND = 200
+    const canvas = document.createElement('canvas')
+    canvas.width = W
+    canvas.height = mapH + BAND
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas not supported')
+
+    ctx.drawImage(mapCanvas, 0, 0, W, mapH)
+
+    // Boundary polygon: project() returns CSS px; canvas px = CSS px * dpr
+    const dpr = window.devicePixelRatio || 1
+    const scale = (W / mapCanvas.width) * dpr
+    ctx.beginPath()
+    ring.forEach((coord, i) => {
+      const p = map.project(coord)
+      if (i === 0) ctx.moveTo(p.x * scale, p.y * scale)
+      else ctx.lineTo(p.x * scale, p.y * scale)
+    })
+    ctx.closePath()
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.15)'
+    ctx.fill()
+    ctx.strokeStyle = '#2563eb'
+    ctx.lineWidth = 6
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+
+    // Map data attribution
+    ctx.font = '20px system-ui, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'
+    ctx.fillRect(W - ctx.measureText('© CARTO © OpenStreetMap contributors').width - 24, mapH - 34, W, 34)
+    ctx.fillStyle = '#4b5563'
+    ctx.fillText('© CARTO © OpenStreetMap contributors', W - 12, mapH - 11)
+
+    // Caption band
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, mapH, W, BAND)
+    ctx.textAlign = 'center'
+    ctx.fillStyle = '#111827'
+    let titleSize = 52
+    ctx.font = `bold ${titleSize}px system-ui, sans-serif`
+    const title = `This is my ${neighborhoodName}.`
+    while (ctx.measureText(title).width > W - 80 && titleSize > 26) {
+      titleSize -= 2
+      ctx.font = `bold ${titleSize}px system-ui, sans-serif`
+    }
+    ctx.fillText(title, W / 2, mapH + 92)
+    ctx.font = '26px system-ui, sans-serif'
+    ctx.fillStyle = '#9ca3af'
+    ctx.fillText(`Draw yours at ${window.location.host}`, W / 2, mapH + 158)
+
+    return canvas.toDataURL('image/png')
+  }, [])
+
+  useEffect(() => {
+    if (mapReady && onRegisterCapture) onRegisterCapture(captureShareImage)
+  }, [mapReady, onRegisterCapture, captureShareImage])
+
   // Handle address marker
   useEffect(() => {
     if (!mapRef.current) return
@@ -213,9 +363,15 @@ export default function Map({ mode, onPolygonChange, address, isDrawing, drawTri
       <div ref={mapContainer} className="h-full w-full" />
 
       {/* Drawing instructions overlay */}
-      {isDrawing && (
+      {isDrawing && showInstructions && (
         <div className="absolute top-20 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-96 bg-blue-600 text-white p-3 rounded-lg shadow-lg text-center text-sm z-20">
           <p>Tap on the map to add points. Tap first point to close shape.</p>
+          <button
+            onClick={() => setShowInstructions(false)}
+            className="mt-3 w-full py-2 px-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 active:bg-blue-100"
+          >
+            OK
+          </button>
           <button
             onClick={onClearDrawing}
             className="mt-2 underline text-blue-100 hover:text-white"
@@ -223,6 +379,16 @@ export default function Map({ mode, onPolygonChange, address, isDrawing, drawTri
             Cancel
           </button>
         </div>
+      )}
+
+      {/* Persistent cancel while drawing, after instructions are dismissed */}
+      {isDrawing && !showInstructions && (
+        <button
+          onClick={onClearDrawing}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-gray-700 py-2 px-4 rounded-full shadow-lg text-sm font-medium hover:bg-gray-50 z-20"
+        >
+          Cancel drawing
+        </button>
       )}
 
       {!mapReady && (

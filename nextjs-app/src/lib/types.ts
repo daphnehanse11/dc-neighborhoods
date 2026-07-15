@@ -19,3 +19,8 @@ export interface Address {
   text: string
   point: [number, number]
 }
+
+export type CaptureShareImage = (
+  boundary: GeoJSON.Polygon,
+  neighborhoodName: string
+) => Promise<string>

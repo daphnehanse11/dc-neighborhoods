@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import AddressInput from './AddressInput'
 import NeighborhoodInput from './NeighborhoodInput'
-import type { Address, SubmissionPayload } from '@/lib/types'
+import type { Address, SubmissionPayload, CaptureShareImage } from '@/lib/types'
 
 async function createSubmission(payload: SubmissionPayload) {
   const response = await fetch('/api/submissions', {
@@ -27,6 +27,7 @@ interface SubmissionFormProps {
   isDrawing: boolean
   onStartDrawing: () => void
   onClearDrawing: () => void
+  onCaptureImage: CaptureShareImage
 }
 
 export default function SubmissionForm({
@@ -37,25 +38,56 @@ export default function SubmissionForm({
   isDrawing,
   onStartDrawing,
   onClearDrawing,
+  onCaptureImage,
 }: SubmissionFormProps) {
   const [neighborhoodName, setNeighborhoodName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [shareImage, setShareImage] = useState<string | null>(null)
+  const [captureFailed, setCaptureFailed] = useState(false)
+  const [canShare, setCanShare] = useState(false)
+
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && !!navigator.canShare)
+  }, [])
 
   const submitMutation = useMutation({
     mutationFn: createSubmission,
-    onSuccess: () => {
+    onSuccess: async (_data, variables) => {
       setSuccess(true)
-      setNeighborhoodName('')
-      setTimeout(() => {
-        setSuccess(false)
-        onSubmitComplete()
-      }, 2000)
+      try {
+        const image = await onCaptureImage(variables.boundary, variables.neighborhoodName)
+        setShareImage(image)
+      } catch {
+        // The share image is a bonus; the submission itself already succeeded
+        setCaptureFailed(true)
+      }
     },
     onError: (err) => {
       setError(err instanceof Error ? err.message : 'Submission failed')
     },
   })
+
+  const handleDone = useCallback(() => {
+    setSuccess(false)
+    setShareImage(null)
+    setCaptureFailed(false)
+    setNeighborhoodName('')
+    onSubmitComplete()
+  }, [onSubmitComplete])
+
+  const handleShare = useCallback(async () => {
+    if (!shareImage) return
+    try {
+      const blob = await (await fetch(shareImage)).blob()
+      const file = new File([blob], 'my-neighborhood.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] })
+      }
+    } catch {
+      // User cancelled the share sheet or sharing is unavailable
+    }
+  }, [shareImage])
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -85,12 +117,52 @@ export default function SubmissionForm({
   const isComplete = address && neighborhoodName.trim() && polygon
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-4 z-10 max-h-[60vh] overflow-auto md:left-auto md:right-4 md:bottom-4 md:w-96 md:rounded-2xl">
+    <div className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-4 z-10 max-h-[60vh] overflow-auto md:left-auto md:right-4 md:bottom-4 md:w-96 md:rounded-2xl ${isDrawing ? 'hidden' : ''}`}>
       {success ? (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-2">✓</div>
+        <div className="text-center py-4">
           <p className="text-lg font-medium text-green-600">Thanks for your submission!</p>
           <p className="text-sm text-gray-500 mt-1">Your neighborhood has been recorded.</p>
+
+          {shareImage ? (
+            <>
+              <img
+                src={shareImage}
+                alt="Your neighborhood boundary"
+                className="mt-3 mx-auto max-h-64 rounded-lg border border-gray-200"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Your exact address is not shown — just your boundary.
+              </p>
+              <div className="mt-3 flex flex-col gap-2">
+                {canShare && (
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors"
+                  >
+                    Share
+                  </button>
+                )}
+                <a
+                  href={shareImage}
+                  download="my-neighborhood.png"
+                  className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Download image
+                </a>
+              </div>
+            </>
+          ) : captureFailed ? null : (
+            <p className="text-sm text-gray-400 mt-3">Making your shareable map…</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDone}
+            className="mt-3 text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Done
+          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,7 +182,7 @@ export default function SubmissionForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Neighborhood Boundary
             </label>
-            {!polygon && !isDrawing && (
+            {!polygon && (
               <button
                 type="button"
                 onClick={onStartDrawing}
@@ -119,20 +191,7 @@ export default function SubmissionForm({
                 Draw Boundary on Map
               </button>
             )}
-            {isDrawing && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                <p className="font-medium">Drawing mode active</p>
-                <p className="mt-1">Tap on the map to add points. Tap the first point to close.</p>
-                <button
-                  type="button"
-                  onClick={onClearDrawing}
-                  className="mt-2 text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Cancel Drawing
-                </button>
-              </div>
-            )}
-            {polygon && !isDrawing && (
+            {polygon && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-green-600 flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
