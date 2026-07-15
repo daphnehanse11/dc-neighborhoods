@@ -3,6 +3,8 @@ import pool from '@/lib/db'
 import { v4 as uuidv4 } from 'uuid'
 import crypto from 'crypto'
 
+const MAX_SUBMISSIONS_PER_HOUR = 10
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -25,9 +27,22 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionId = uuidv4()
-    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    // x-forwarded-for can be a list (client, proxy1, ...); the first entry is the client
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
     const ipHash = crypto.createHash('sha256').update(ip).digest('hex')
     const normalizedName = neighborhoodName.trim().toLowerCase()
+
+    const recentCount = await pool.query(
+      `SELECT COUNT(*) FROM submissions
+       WHERE ip_hash = $1 AND submitted_at > NOW() - INTERVAL '1 hour'`,
+      [ipHash]
+    )
+    if (Number(recentCount.rows[0].count) >= MAX_SUBMISSIONS_PER_HOUR) {
+      return NextResponse.json(
+        { error: 'Too many submissions from this address. Please try again in an hour.' },
+        { status: 429 }
+      )
+    }
 
     const result = await pool.query(
       `INSERT INTO submissions (

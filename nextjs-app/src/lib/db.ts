@@ -2,7 +2,8 @@ import { Pool } from 'pg'
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  // Neon's certificates are signed by a public CA, so full verification works
+  ssl: { rejectUnauthorized: true },
 })
 
 export default pool

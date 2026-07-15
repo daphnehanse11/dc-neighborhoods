@@ -7,7 +7,9 @@ A crowdsourced neighborhood boundary mapping tool for the DC metro area. Residen
 
 **Target distribution**: Greater Greater Washington readers
 
-**Stack**: React + TypeScript + MapLibre (frontend), Python + FastAPI (backend), PostgreSQL + PostGIS (database)
+**Stack**: Next.js (React + TypeScript + MapLibre) with API routes, deployed on Vercel; Neon Postgres + PostGIS (database)
+
+**Live site**: https://dc-neighborhoods.vercel.app
 
 ## Quick Links
 
@@ -41,41 +43,30 @@ This project uses specialized agent personas for different domains. Load the rel
 
 ```
 dc-neighborhoods/
-├── CLAUDE.md                 ← You are here
-├── agents/
-│   ├── pm.md
-│   ├── research-architect.md
-│   ├── data-collector.md
-│   ├── map-maker.md
-│   ├── ui-expert.md
-│   └── project-guide.md      ← Background research doc
-├── frontend/                  ← React app
+├── .claude/CLAUDE.md         ← You are here
+├── agents/                    ← Agent personas + project-guide.md research doc
+├── nextjs-app/                ← THE ACTIVE APP (Next.js, deployed on Vercel)
 │   ├── src/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── api/
-│   │   └── pages/
+│   │   ├── app/               ← Pages + API routes (app/api/submissions)
+│   │   ├── components/        ← Map, Form, etc.
+│   │   └── lib/               ← db.ts (pg pool), schema.sql, types
 │   └── package.json
-├── backend/                   ← FastAPI app
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── models/
-│   │   ├── routes/
-│   │   └── services/
-│   └── requirements.txt
+├── frontend/                  ← LEGACY prototype (Vite React) — do not use
+├── backend/                   ← LEGACY prototype (FastAPI) — do not use
 └── data/                      ← Seed data, exports
-    └── neighborhood-seeds/
 ```
 
-## Current Phase: MVP (Weeks 1-2)
+**Important**: `frontend/` and `backend/` are superseded early prototypes. All work happens in `nextjs-app/`.
+
+## Current Phase: MVP
 
 ### MVP Scope
 - [x] Project setup and planning
-- [ ] Base map centered on DC metro
-- [ ] Address input with geocoding
-- [ ] Neighborhood name autocomplete (from seed list)
-- [ ] Polygon drawing that works on mobile
-- [ ] Submit to PostGIS database
+- [x] Base map centered on DC metro (with metro lines/stations)
+- [x] Address input with geocoding (Nominatim)
+- [x] Neighborhood name autocomplete (custom names allowed)
+- [x] Polygon drawing
+- [x] Submit to PostGIS database (Neon — live and verified 2026-07-15)
 - [ ] Basic results view (show overlapping polygons)
 
 ### NOT in MVP
@@ -87,46 +78,39 @@ dc-neighborhoods/
 
 ### Key Decisions Made
 - Mobile-first: if it doesn't work on phones, it doesn't ship
-- No paid services for MVP (use Nominatim for geocoding, free map tiles)
+- No paid services for MVP (Nominatim geocoding, free map tiles, Neon/Vercel free tiers)
 - Autocomplete allows custom neighborhood names (don't force from list)
+- Hosting: Vercel (app, personal scope "daphne-hansells-projects") + Neon (Postgres + PostGIS)
+- API rate limit: 10 submissions per IP per hour (enforced in the submissions route)
 
 ### Key Decisions Pending
 - Minimum submissions before showing consensus (5? 10?)
 - Whether to require address or just allow "use my location"
-- Exact hosting setup (leaning Vercel + Railway)
+- Custom domain (dc-neighborhoods.vercel.app for now)
 
 ## Commands
 
 ```bash
-# Frontend
-cd frontend
+cd nextjs-app
 npm install
-npm run dev          # localhost:5173
-
-# Backend  
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload   # localhost:8000
-
-# Database (local)
-docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgis/postgis
+npm run dev          # localhost:3000
 ```
+
+There is no separate backend to run — API routes live inside the Next.js app. The database is remote (Neon); there is no local database.
 
 ## Environment Variables
 
 ```bash
-# frontend/.env
-VITE_API_URL=http://localhost:8000
-VITE_MAPLIBRE_STYLE=https://basemaps.cartocdn.com/gl/positron-gl-style/style.json
-
-# backend/.env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/neighborhoods
+# nextjs-app/.env.local (gitignored — never commit)
+DATABASE_URL=postgresql://...   # Neon connection string; also set in Vercel (Production + Preview)
 ```
+
+The database schema lives in `nextjs-app/src/lib/schema.sql` and has already been applied to the Neon database (PostGIS enabled, `submissions` table with spatial indexes).
 
 ## Conventions
 
 - **Coordinates**: Always WGS84 (EPSG:4326), [longitude, latitude] order (GeoJSON standard)
-- **API**: REST, JSON, snake_case for Python, camelCase for JS
+- **API**: REST, JSON, camelCase in request/response bodies, snake_case in the database
 - **Components**: Functional React with hooks, TypeScript strict mode
 - **CSS**: Tailwind utility classes, no custom CSS unless necessary
 - **Git**: Conventional commits (feat:, fix:, docs:, etc.)
