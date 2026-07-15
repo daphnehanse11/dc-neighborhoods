@@ -74,7 +74,11 @@ export async function POST(request: NextRequest) {
     const sessionId = uuidv4()
     // x-forwarded-for can be a list (client, proxy1, ...); the first entry is the client
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
-    const ipHash = crypto.createHash('sha256').update(ip).digest('hex')
+    // Salted so a leaked hash can't be reversed by enumerating the IPv4 space
+    const ipHash = crypto
+      .createHash('sha256')
+      .update(`${process.env.IP_HASH_SALT || ''}${ip}`)
+      .digest('hex')
     const normalizedName = neighborhoodName.trim().toLowerCase()
 
     const recentCount = await pool.query(
