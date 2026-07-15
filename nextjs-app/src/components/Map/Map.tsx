@@ -314,7 +314,7 @@ export default function Map({ mode, polygon, onPolygonChange, address, isDrawing
     ctx.fillStyle = '#111827'
     let titleSize = 52
     ctx.font = `bold ${titleSize}px system-ui, sans-serif`
-    const title = `This is my ${neighborhoodName}.`
+    const title = `This is my ${neighborhoodName}`
     while (ctx.measureText(title).width > W - 80 && titleSize > 26) {
       titleSize -= 2
       ctx.font = `bold ${titleSize}px system-ui, sans-serif`
