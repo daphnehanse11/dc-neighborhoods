@@ -8,9 +8,28 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://dc-neighborhoods.vercel.app";
+const TITLE = "DC Neighborhoods";
+const DESCRIPTION =
+  "Where does your neighborhood end? Draw your boundary on the map and help build a crowdsourced picture of how Washingtonians define their neighborhoods.";
+
 export const metadata: Metadata = {
-  title: "DC Neighborhoods",
-  description: "Draw your neighborhood boundaries - a crowdsourced mapping project for the DC metro area",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: TITLE,
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

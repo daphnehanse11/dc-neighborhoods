@@ -136,7 +136,7 @@ export default function Home() {
           />
         )}
 
-        {view === 'results' && <ResultsPanel />}
+        {view === 'results' && <ResultsPanel onDraw={() => setView('draw')} />}
       </main>
     </div>
   )
