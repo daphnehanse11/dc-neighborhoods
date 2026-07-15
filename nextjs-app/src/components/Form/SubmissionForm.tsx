@@ -239,6 +239,11 @@ export default function SubmissionForm({
           >
             {submitMutation.isPending ? 'Submitting...' : 'Submit My Neighborhood'}
           </button>
+
+          <p className="text-xs text-gray-500 text-center">
+            Once enough people have drawn their neighborhoods, we will publish
+            a map of where they agree and where they don&apos;t.
+          </p>
         </form>
       )}
     </div>
