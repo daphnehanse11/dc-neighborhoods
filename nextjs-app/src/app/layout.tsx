@@ -24,11 +24,20 @@ export const metadata: Metadata = {
     siteName: TITLE,
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "DC Neighborhoods: draw your neighborhood boundary on the map",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
+    images: ["/og.png"],
   },
 };
 
